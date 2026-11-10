@@ -1,0 +1,567 @@
+<title>תחנת אבחון Drivetrain</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Assistant:wght@400;600;700&display=swap">
+<style>
+/* Layout: a workshop job sheet: case header, five-step rail, one working panel per step */
+:root {
+  --bg: #f4f6f8; --surface: #ffffff; --fg: #18212e; --muted: #596473; --line: #d9dfe6;
+  --brand: #23395b; --brand-soft: #e7ecf4; --brand-fg: #ffffff;
+  --accent: #b9561a; --accent-soft: #fbeee3;
+  --ok: #2c7537; --ok-soft: #e4f2e6;
+  --stop: #b3261e; --stop-soft: #fbe8e6;
+  --sim: #6a3aa0; --sim-soft: #f1eaf8;
+  --font: "Google Sans", "Assistant", Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151b; --surface: #1a2029; --fg: #e5e9ef; --muted: #9aa4b2; --line: #2d3644;
+    --brand: #2f4c78; --brand-soft: #1f2a3a; --brand-fg: #ffffff;
+    --accent: #e08447; --accent-soft: #33251b;
+    --ok: #63b86f; --ok-soft: #1b2c1e; --stop: #f07a70; --stop-soft: #3a1d1b;
+    --sim: #b28ce0; --sim-soft: #2a2236;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151b; --surface: #1a2029; --fg: #e5e9ef; --muted: #9aa4b2; --line: #2d3644;
+  --brand: #2f4c78; --brand-soft: #1f2a3a; --brand-fg: #ffffff;
+  --accent: #e08447; --accent-soft: #33251b;
+  --ok: #63b86f; --ok-soft: #1b2c1e; --stop: #f07a70; --stop-soft: #3a1d1b;
+  --sim: #b28ce0; --sim-soft: #2a2236;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.55; }
+.wrap {
+  max-width: 1120px; margin: 0 auto; display: grid; gap: 20px;
+  padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header.top { display: grid; gap: 6px; }
+.eyebrow { font-size: 0.8rem; letter-spacing: 0.04em; color: var(--muted); }
+h1 { margin: 0; font-size: 1.7rem; font-weight: 700; text-wrap: balance; }
+h2 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+h3 { margin: 0; font-size: 1.02rem; font-weight: 700; }
+p { margin: 0; }
+.lead { color: var(--muted); max-width: 70ch; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 500; padding: 2px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); white-space: nowrap; }
+:root[data-theme="dark"] .badge { color: var(--fg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .badge { color: var(--fg); } }
+.badge.sim { background: var(--sim-soft); color: var(--sim); }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--accent-soft); color: var(--accent); }
+.title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+/* step rail */
+nav.rail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.step-btn {
+  font: inherit; text-align: right; cursor: pointer; display: grid; gap: 2px;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+.step-btn .n { font-size: 0.75rem; color: var(--muted); }
+.step-btn .t { font-weight: 500; font-size: 0.95rem; }
+.step-btn[aria-current="step"] { border-color: var(--brand); box-shadow: inset 0 -3px 0 var(--brand); }
+.step-btn.done .n::after { content: " · הושלם"; color: var(--ok); }
+.step-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+.step-btn:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 720px) { nav.rail { grid-template-columns: repeat(5, minmax(56px, 1fr)); } .step-btn .t { font-size: 0.8rem; } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 18px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 820px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+dl.kv { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; }
+dl.kv dt { color: var(--muted); font-size: 0.9rem; }
+dl.kv dd { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+ul.plain { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; }
+
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab { font: inherit; font-size: 0.9rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--brand-fg); }
+.page-tag { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+
+label.field { display: grid; gap: 6px; font-weight: 500; }
+.hint { font-size: 0.88rem; color: var(--muted); font-weight: 400; }
+textarea, input[type="text"], input[type="number"], select {
+  font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0;
+}
+textarea { min-height: 96px; resize: vertical; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button.primary, button.secondary {
+  font: inherit; font-weight: 500; padding: 9px 18px; border-radius: 8px; cursor: pointer; border: 1px solid var(--brand);
+}
+button.primary { background: var(--brand); color: var(--brand-fg); }
+button.secondary { background: transparent; color: var(--fg); border-color: var(--line); }
+button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.notice { border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; font-size: 0.95rem; }
+.notice.warn { background: var(--accent-soft); border: 1px solid var(--accent); }
+.notice.stop { background: var(--stop-soft); border: 1px solid var(--stop); }
+.notice.ok { background: var(--ok-soft); border: 1px solid var(--ok); }
+.notice.sim { background: var(--sim-soft); border: 1px dashed var(--sim); }
+.notice b { font-weight: 700; }
+
+/* hypothesis map */
+.hyps { display: grid; gap: 10px; }
+.hyp { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.hyp .rank { font-size: 1.4rem; font-weight: 700; color: var(--brand); text-align: center; }
+:root[data-theme="dark"] .hyp .rank { color: var(--fg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hyp .rank { color: var(--fg); } }
+.hyp .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chat { display: grid; gap: 8px; }
+.qa { border-inline-start: 3px solid var(--sim); padding: 6px 12px; background: var(--sim-soft); border-radius: 6px; display: grid; gap: 2px; }
+.qa .q { font-weight: 500; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: inherit; font-size: 0.9rem; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--sim); background: transparent; color: var(--fg); cursor: pointer; }
+
+/* verification table */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table.vt { border-collapse: collapse; width: 100%; min-width: 980px; }
+table.vt th, table.vt td { border-bottom: 1px solid var(--line); padding: 8px; text-align: right; vertical-align: top; }
+table.vt th { font-size: 0.85rem; color: var(--muted); font-weight: 500; background: var(--bg); }
+table.vt td.h { width: 190px; font-weight: 500; }
+table.vt tr.example td { background: var(--accent-soft); }
+table.vt input[type="number"] { width: 64px; }
+.err-list { margin: 0; padding-inline-start: 20px; }
+
+.stop-head { display: flex; gap: 12px; align-items: center; }
+.stop-sign { width: 46px; height: 46px; flex: none; }
+.radio-row { display: flex; flex-wrap: wrap; gap: 16px; }
+.radio-row label, .check label { display: flex; gap: 8px; align-items: flex-start; }
+.check { display: grid; gap: 8px; }
+
+pre.summary { white-space: pre-wrap; font-family: var(--font); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin: 0; max-height: 460px; overflow: auto; }
+footer.legend { display: grid; gap: 10px; font-size: 0.92rem; }
+footer.legend .row { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+details.key { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--surface); }
+details.key summary { cursor: pointer; font-weight: 500; }
+#tests-panel { border: 2px solid var(--brand); }
+.t-pass { color: var(--ok); } .t-fail { color: var(--stop); font-weight: 700; }
+@media (prefers-reduced-motion: no-preference) { .panel { animation: in 0.18s ease-out; } @keyframes in { from { transform: translateY(4px); } to { transform: none; } } }
+</style>
+
+<div class="wrap" dir="rtl" lang="he">
+  <header class="top">
+    <div class="eyebrow">התנסות · מגמת תחבורה מתקדמת · כיתה יב׳</div>
+    <div class="title-row">
+      <h1>תחנת אבחון Drivetrain</h1>
+      <span class="badge warn">אב־טיפוס · ספרינט 1</span>
+    </div>
+    <p class="lead">תיק תקלה: <b>נקישות בפנייה חדה</b>. עבדו בזוגות לפי הסדר. כל שלב נפתח רק אחרי שהשלב שלפניו הושלם.</p>
+  </header>
+
+  <section class="panel" id="tests-panel" hidden></section>
+
+  <nav class="rail" aria-label="שלבי ההתנסות" id="rail"></nav>
+
+  <main id="stage"></main>
+
+  <footer class="legend">
+    <div class="row">
+      <span><span class="badge ok">פועל</span> תיק התקלה, השערה ראשונה, טבלת אימות, בדיקת "עצור!", סיכום להגשה</span>
+      <span><span class="badge sim">מדומה</span> עוזר האבחון: תשובות כתובות מראש, נתונים ומפרט סינתטיים</span>
+      <span><span class="badge warn">חסר</span> חיבור לעוזר AI אמיתי, מסך מורה</span>
+    </div>
+    <details class="key">
+      <summary>למורה: מפתח תשובות</summary>
+      <p style="margin-top:8px">התקלה: מפרק CV חיצוני שמאלי שחוק, בעקבות גומיית מגן קרועה. הטעות המתוכננת של העוזר היא בהשערה 3:</p>
+      <ul class="plain">
+        <li>העוזר נותן מרווח שיניים תקין של 0.02–0.05 מ"מ. במפרט (עמ׳ 63) כתוב 0.08–0.15 מ"מ.</li>
+        <li>העוזר ממליץ להחליף את הדיפרנציאל בלי שום מדידה.</li>
+        <li>תסמיני דיפרנציאל לא תלויים בזווית ההיגוי. זה לא מתאים לתסמין.</li>
+      </ul>
+      <p style="margin-top:8px">רמז: שאלת ההמשך על מרווח השיניים מחזירה את הערך הנכון מהמפרט.</p>
+    </details>
+  </footer>
+</div>
+
+<script>
+/* ---------- data (synthetic, for training only) ---------- */
+const CASE = {
+  vehicle: 'רכב ההדרכה של המגמה · הנעה קדמית · תיבה ידנית',
+  symptom: 'נקישות קצובות מאזור הגלגל הקדמי השמאלי בפנייה חדה תוך האצה. ככל שזווית ההיגוי גדלה, הנקישות מהירות וחזקות יותר. בנסיעה ישרה אין נקישות.',
+  conditions: ['מהירות נמוכה, 5–15 קמ"ש', 'היגוי מלא, בולט יותר בפנייה ימינה', 'מופיע ברכב קר וגם ברכב חם'],
+  history: 'לפי הנהג, לפני כחודש הרכב נסע בדרך עפר משובשת.',
+  dtc: 'אין קודי תקלה פעילים או שמורים (P, C, U).',
+  live: [
+    ['מהירות רכב', '10 קמ"ש'], ['זווית היגוי', '480°'], ['סל"ד מנוע', '1,450'], ['הילוך', '2'],
+    ['מהירות גלגל קדמי שמאלי', '11.2 קמ"ש'], ['מהירות גלגל קדמי ימני', '8.9 קמ"ש']
+  ]
+};
+const SPEC = [
+  { page: 41, title: 'מפרקי CV וגומיית מגן', rows: [
+    ['מפרק חיצוני: תפקיד', 'מעביר מומנט לגלגל בזמן היגוי, בזוויות של עד 47°'],
+    ['מפרק חיצוני: תסמין שחיקה', 'נקישות בפנייה חדה תחת עומס, שמתגברות עם זווית ההיגוי'],
+    ['מפרק פנימי: תסמין שחיקה', 'רעידות בהאצה בנסיעה ישרה. לא תלוי בזווית ההיגוי'],
+    ['בדיקה ויזואלית', 'גומיית מגן שלמה, בלי סדקים או קרעים, ובלי גריז מחוץ לגומייה'],
+    ['חופש במפרק', 'אין חופש מורגש בסיבוב הציר ביד'],
+    ['מומנט הידוק אום הציר', '280 Nm']
+  ]},
+  { page: 57, title: 'ציר הנעה ומסב גלגל', rows: [
+    ['כפיפות ציר', 'סטייה מרבית 0.5 מ"מ, נמדדת בשעון אינדיקטור'],
+    ['חופש מסב גלגל', '0 מ"מ בבדיקה ידנית בשעה 12 ובשעה 6'],
+    ['תסמין של מסב שחוק', 'זמזום שמשתנה עם המהירות, לא נקישות']
+  ]},
+  { page: 63, title: 'דיפרנציאל', rows: [
+    ['מרווח שיניים (Backlash)', '0.08–0.15 מ"מ'],
+    ['תסמין אופייני', 'יללה שמשתנה בין האצה לגלישה, או "קלאנק" במעבר עומס. לא תלוי בזווית ההיגוי'],
+    ['מפלס שמן', 'עד שפת פתח המילוי']
+  ]}
+];
+const AI_MAP = [
+  { id: 'h1', rank: 1, title: 'מפרק CV חיצוני שמאלי שחוק', conf: 'גבוהה', page: 41, flawed: false,
+    reason: 'הנקישות מופיעות רק בפנייה חדה תחת עומס ומתגברות עם זווית ההיגוי. זה התסמין האופייני לשחיקת מפרק חיצוני. אין קוד תקלה, וזה מתאים לתקלה מכנית.' },
+  { id: 'h2', rank: 2, title: 'גומיית מגן קרועה במפרק החיצוני', conf: 'בינונית', page: 41, flawed: false,
+    reason: 'נסיעה בדרך עפר עלולה לקרוע את הגומייה. כשגריז יוצא ולכלוך נכנס, המפרק נשחק מהר. כדאי לבדוק אותה יחד עם המפרק.' },
+  { id: 'h3', rank: 3, title: 'מרווח שיניים מוגדל בדיפרנציאל', conf: 'נמוכה', page: 63, flawed: true,
+    reason: 'מרווח שיניים גדול גורם לנקישות. הערך התקין הוא 0.02–0.05 מ"מ. אם המרווח גדול יותר, מומלץ להחליף את הדיפרנציאל.' }
+];
+const QA = [
+  { q: 'מה מומנט ההידוק של אום הציר?', a: '280 Nm. מקור: עמ׳ 41.' },
+  { q: 'מה מרווח השיניים התקין בדיפרנציאל?', a: '0.08–0.15 מ"מ. מקור: עמ׳ 63.' },
+  { q: 'מה התסמין של מסב גלגל שחוק?', a: 'זמזום שמשתנה עם המהירות, לא נקישות. מקור: עמ׳ 57.' },
+  { q: 'מה לחץ האוויר המומלץ בצמיגים?', a: 'אין מידע במפרט.' }
+];
+const PROMPT_TEMPLATE =
+`תסמין:
+תנאים שבהם הוא מופיע:
+קודי תקלה:
+נתוני זמן אמת:
+בקשה: הצע לפחות 3 השערות מדורגות לאורך שרשרת העברת הכוח. לכל השערה כתוב נימוק ועמוד במפרט.`;
+const STOP_CHECKS = [
+  'אין בתוכנית נסיעת מבחן כשיש חשד לנעילת גלגל (היתפסות דיפרנציאל או מסב)',
+  'אין בתוכנית נסיעה כשיש חשד לקפיצה מהילוך ולאובדן הנעה פתאומי',
+  'בדקנו שאין דליפת שמן או גריז על הבלמים'
+];
+const STEPS = ['תיק התקלה', 'עוזר האבחון', 'טבלת אימות', 'עצור!', 'סיכום'];
+const MARKS = ['מתקבלת', 'נדחית', 'צריך לבדוק'];
+const MIN_TEXT = 20;
+
+/* ---------- state ---------- */
+function freshState() {
+  return {
+    step: 1, unlocked: 1, hypothesis: '', prompt: PROMPT_TEMPLATE, mapShown: false, asked: [],
+    rows: AI_MAP.map(h => ({ id: h.id, title: h.title, mark: '', test: '', tool: '', normal: '', page: '', order: '', reason: '', example: false })),
+    trace: { rowId: '', text: '' },
+    stop: { answer: '', checks: STOP_CHECKS.map(() => false), note: '' }
+  };
+}
+function withExampleRow(s) {
+  const r = s.rows.find(x => x.id === 'h2');
+  Object.assign(r, { mark: 'צריך לבדוק', test: 'בדיקה ויזואלית של גומיית המגן, תוך סיבוב מלא של הגלגל', tool: 'פנס ומראה', normal: 'גומייה שלמה, בלי סדקים ובלי גריז מבחוץ', page: '41', order: '1', example: true });
+  return s;
+}
+const KEY = 'drivetrain-station-v1';
+let S = load();
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); if (s && s.rows) return s; } } catch (e) {}
+  return withExampleRow(freshState());
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ---------- pure logic (covered by #tests) ---------- */
+function canEnterAssistant(s) { return s.hypothesis.trim().length >= MIN_TEXT; }
+function answerFor(question) {
+  const hit = QA.find(x => x.q === question);
+  return hit ? hit.a : 'אין מידע במפרט.';
+}
+function validateTable(s) {
+  const errs = [];
+  const active = s.rows.filter(r => r.mark && r.mark !== 'נדחית');
+  s.rows.forEach(r => {
+    const name = 'השערה "' + r.title + '"';
+    if (!r.mark) { errs.push(name + ': חסר סימון'); return; }
+    if (r.mark === 'נדחית') { if (r.reason.trim().length < 5) errs.push(name + ': חסר נימוק לדחייה'); return; }
+    if (!r.test.trim()) errs.push(name + ': חסרה בדיקה בסדנה');
+    if (!r.tool.trim()) errs.push(name + ': חסר כלי');
+    if (!r.normal.trim()) errs.push(name + ': חסר ערך תקין');
+    if (!String(r.page).trim()) errs.push(name + ': חסר עמוד במפרט');
+    if (!(parseInt(r.order, 10) >= 1)) errs.push(name + ': חסר מספר בסדר הבדיקות');
+  });
+  const orders = active.map(r => parseInt(r.order, 10)).filter(n => n >= 1);
+  if (new Set(orders).size !== orders.length) errs.push('סדר הבדיקות: אותו מספר מופיע פעמיים');
+  if (s.rows.length && s.rows.every(r => r.mark) && !active.length) errs.push('צריך לפחות השערה אחת לבדיקה בסדנה');
+  if (!s.trace.rowId) errs.push('עקבות הבינה: בחרו באיזו השערה העוזר טעה');
+  if (s.trace.text.trim().length < MIN_TEXT) errs.push('עקבות הבינה: הסבירו מה הייתה הטעות ואיך זיהיתם אותה');
+  return errs;
+}
+function stopResult(s) {
+  if (s.stop.answer === 'יש סכנה') return 'danger';
+  if (s.stop.answer === 'אין סכנה' && s.stop.checks.every(Boolean)) return 'ok';
+  return 'incomplete';
+}
+function buildSummary(s) {
+  const L = [];
+  L.push('סיכום הגשה: תחנת אבחון Drivetrain');
+  L.push('תיק התקלה: נקישות בפנייה חדה');
+  L.push('');
+  L.push('1. ההשערה שלנו לפני השימוש ב-AI');
+  L.push(s.hypothesis.trim());
+  L.push('');
+  L.push('2. מפת ההשערות של העוזר והשיפוט שלנו');
+  s.rows.forEach((r, i) => {
+    L.push((i + 1) + '. ' + r.title + ': ' + (r.mark || 'לא סומן') + (r.mark === 'נדחית' && r.reason ? ' (נימוק: ' + r.reason.trim() + ')' : ''));
+  });
+  if (s.asked.length) {
+    L.push('');
+    L.push('שאלות המשך ששאלנו את העוזר:');
+    s.asked.forEach(q => L.push('- ' + q + ' ← ' + answerFor(q)));
+  }
+  L.push('');
+  L.push('3. טבלת אימות פיזיקלי (לפי סדר הבדיקות)');
+  s.rows.filter(r => r.mark && r.mark !== 'נדחית')
+    .sort((a, b) => parseInt(a.order, 10) - parseInt(b.order, 10))
+    .forEach(r => L.push(r.order + '. ' + r.title + ' | בדיקה: ' + r.test.trim() + ' | כלי: ' + r.tool.trim() + ' | ערך תקין: ' + r.normal.trim() + ' | עמ׳ ' + r.page));
+  L.push('');
+  L.push('4. נספח "עקבות הבינה"');
+  const tr = s.rows.find(r => r.id === s.trace.rowId);
+  L.push('ההשערה שבה העוזר טעה: ' + (tr ? tr.title : 'לא נבחרה'));
+  L.push(s.trace.text.trim());
+  L.push('');
+  L.push('5. בדיקת "עצור!"');
+  L.push('תשובה: ' + (s.stop.answer || 'לא נענתה'));
+  STOP_CHECKS.forEach((c, i) => L.push((s.stop.checks[i] ? '[v] ' : '[ ] ') + c));
+  if (s.stop.note.trim()) L.push('הערה: ' + s.stop.note.trim());
+  return L.join('\n');
+}
+
+/* ---------- rendering ---------- */
+const $ = sel => document.querySelector(sel);
+function esc(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function renderRail() {
+  $('#rail').innerHTML = STEPS.map((t, i) => {
+    const n = i + 1;
+    const cls = n < S.unlocked ? 'step-btn done' : 'step-btn';
+    return '<button type="button" class="' + cls + '" data-go="' + n + '"' + (n > S.unlocked ? ' disabled' : '') +
+      (n === S.step ? ' aria-current="step"' : '') + '><span class="n">שלב ' + n + '</span><span class="t">' + esc(t) + '</span></button>';
+  }).join('');
+}
+function go(n) { if (n <= S.unlocked) { S.step = n; save(); render(); window.scrollTo({ top: 0 }); } }
+function unlock(n) { S.unlocked = Math.max(S.unlocked, n); go(n); }
+
+function viewCase() {
+  const spec = SPEC.map((p, i) => '<button type="button" class="tab" role="tab" data-tab="' + i + '" aria-selected="' + (i === 0) + '">עמ׳ ' + p.page + ' · ' + esc(p.title) + '</button>').join('');
+  return '<section class="panel">' +
+    '<h2>שלב 1: תיק התקלה</h2>' +
+    '<div class="grid2">' +
+      '<div class="card"><h3>כרטיס תקלה</h3><dl class="kv">' +
+        '<dt>רכב</dt><dd>' + esc(CASE.vehicle) + '</dd>' +
+        '<dt>תסמין</dt><dd>' + esc(CASE.symptom) + '</dd>' +
+        '<dt>תנאים</dt><dd><ul class="plain">' + CASE.conditions.map(c => '<li>' + esc(c) + '</li>').join('') + '</ul></dd>' +
+        '<dt>רקע</dt><dd>' + esc(CASE.history) + '</dd>' +
+        '<dt>קודי תקלה</dt><dd>' + esc(CASE.dtc) + '</dd>' +
+      '</dl><h3>נתוני זמן אמת בזמן התסמין</h3><dl class="kv num">' +
+        CASE.live.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('') +
+      '</dl></div>' +
+      '<div class="card"><h3>דפי מפרט של היצרן</h3><div class="tabs" role="tablist">' + spec + '</div><div id="spec-body"></div>' +
+      '<p class="hint">נתונים סינתטיים להדרכה. את הדפים האלה העוזר "קורא" בשלב 2.</p></div>' +
+    '</div>' +
+    '<label class="field" for="hyp">ההשערה שלנו, לפני שפונים ל-AI<span class="hint">מה התסמין אומר לכם? איזה מכלול בשרשרת חשוד, ולמה? (לפחות ' + MIN_TEXT + ' תווים)</span>' +
+      '<textarea id="hyp" data-bind="hypothesis">' + esc(S.hypothesis) + '</textarea></label>' +
+    '<div class="actions"><button type="button" class="primary" id="to2"' + (canEnterAssistant(S) ? '' : ' disabled') + '>המשך לעוזר האבחון</button>' +
+      '<span class="hint" id="gate-hint">' + (canEnterAssistant(S) ? '' : 'המעבר לעוזר ייפתח אחרי שתכתבו השערה.') + '</span></div>' +
+  '</section>';
+}
+function renderSpec(i) {
+  const p = SPEC[i];
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab == i)));
+  $('#spec-body').innerHTML = '<div class="page-tag">עמוד ' + p.page + '</div><dl class="kv">' +
+    p.rows.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd class="num">' + esc(v) + '</dd>').join('') + '</dl>';
+}
+
+function viewAssistant() {
+  const map = S.mapShown ? '<div class="hyps">' + AI_MAP.map(h =>
+      '<div class="hyp"><div class="rank num">' + h.rank + '</div><div style="display:grid;gap:6px;min-width:0">' +
+      '<div class="meta"><h3>' + esc(h.title) + '</h3><span class="badge">סבירות ' + esc(h.conf) + '</span><span class="page-tag">מקור: עמ׳ ' + h.page + '</span></div>' +
+      '<p>' + esc(h.reason) + '</p></div></div>').join('') + '</div>' : '';
+  const chat = S.asked.map(q => '<div class="qa"><span class="q">' + esc(q) + '</span><span>' + esc(answerFor(q)) + '</span></div>').join('');
+  return '<section class="panel">' +
+    '<div class="title-row"><h2>שלב 2: עוזר האבחון</h2><span class="badge sim">מדומה</span></div>' +
+    '<div class="notice sim"><b>הגדרות העוזר</b><span>מקורות: שלושת דפי המפרט (עמ׳ 41, 57, 63).</span>' +
+      '<span>כללים: לענות רק מתוך המסמכים, לציין עמוד, ולענות "אין מידע במפרט" כשאין מקור.</span>' +
+      '<span class="hint">בספרינט 1 העוזר מדומה: התשובות כתובות מראש. בספרינט 2 הזוג יבנה עוזר אמיתי.</span></div>' +
+    '<label class="field" for="prompt">הפרומפט שלנו<span class="hint">השלימו את התבנית מתוך כרטיס התקלה.</span>' +
+      '<textarea id="prompt" data-bind="prompt" style="min-height:150px">' + esc(S.prompt) + '</textarea></label>' +
+    '<div class="actions"><button type="button" class="primary" id="send">שלחו לעוזר</button></div>' +
+    map +
+    (S.mapShown ? '<div class="card"><h3>שאלות המשך לעוזר</h3><p class="hint">בדקו את ההשערות. שאלו את העוזר על ערכים מהמפרט.</p>' +
+      '<div class="chips">' + QA.map((x, i) => '<button type="button" class="chip" data-ask="' + i + '">' + esc(x.q) + '</button>').join('') + '</div>' +
+      '<div class="chat">' + chat + '</div></div>' +
+      '<div class="actions"><button type="button" class="primary" id="to3">המשך לטבלת האימות</button></div>' : '') +
+  '</section>';
+}
+
+function viewTable() {
+  const rows = S.rows.map((r, i) =>
+    '<tr' + (r.example ? ' class="example"' : '') + ' data-row="' + i + '">' +
+      '<td class="h">' + esc(r.title) + (r.example ? '<div class="hint">שורת דוגמה</div>' : '') + '</td>' +
+      '<td><select data-f="mark" aria-label="סימון"><option value="">בחרו</option>' + MARKS.map(m => '<option' + (r.mark === m ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></td>' +
+      '<td><input type="number" min="1" data-f="order" value="' + esc(r.order) + '" aria-label="סדר"></td>' +
+      '<td><input type="text" data-f="test" value="' + esc(r.test) + '" aria-label="בדיקה בסדנה"></td>' +
+      '<td><input type="text" data-f="tool" value="' + esc(r.tool) + '" aria-label="כלי"></td>' +
+      '<td><input type="text" data-f="normal" value="' + esc(r.normal) + '" aria-label="ערך תקין"></td>' +
+      '<td><input type="text" data-f="page" value="' + esc(r.page) + '" aria-label="עמוד" style="width:64px"></td>' +
+      '<td><input type="text" data-f="reason" value="' + esc(r.reason) + '" aria-label="נימוק לדחייה"></td>' +
+    '</tr>').join('');
+  return '<section class="panel">' +
+    '<h2>שלב 3: טבלת אימות פיזיקלי</h2>' +
+    '<p class="lead">סמנו ליד כל השערה של העוזר אם היא מתקבלת, נדחית או שצריך לבדוק אותה. לכל השערה שלא נדחתה, תכננו בדיקה בסדנה וקבעו את סדר הבדיקות. השורה הצבועה היא דוגמה.</p>' +
+    '<div class="tbl-wrap"><table class="vt"><thead><tr><th>השערה</th><th>סימון</th><th>סדר</th><th>בדיקה בסדנה</th><th>כלי</th><th>ערך תקין לפי המפרט</th><th>עמ׳</th><th>נימוק לדחייה</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="card"><h3>נספח "עקבות הבינה"</h3>' +
+      '<label class="field" for="trace-row">באיזו השערה העוזר טעה?<select id="trace-row" data-bind="trace.rowId"><option value="">בחרו</option>' +
+        S.rows.map(r => '<option value="' + r.id + '"' + (S.trace.rowId === r.id ? ' selected' : '') + '>' + esc(r.title) + '</option>').join('') + '</select></label>' +
+      '<label class="field" for="trace-text">מה הייתה הטעות, ואיך זיהיתם אותה?<span class="hint">ציינו את העמוד במפרט או את החוק הפיזיקלי שעזר לכם.</span>' +
+        '<textarea id="trace-text" data-bind="trace.text">' + esc(S.trace.text) + '</textarea></label></div>' +
+    '<div id="table-errors"></div>' +
+    '<div class="actions"><button type="button" class="primary" id="to4">המשך לבדיקת "עצור!"</button></div>' +
+  '</section>';
+}
+
+function viewStop() {
+  const r = stopResult(S);
+  const box = r === 'danger'
+    ? '<div class="notice stop"><b>עצרו את העבודה.</b><span>דווחו למורה לפני שממשיכים. אל תבצעו בדיקה או נסיעה עד שהמורה מאשר.</span></div>'
+    : r === 'ok' ? '<div class="notice ok"><b>אפשר להמשיך.</b><span>התוכנית עברה את בדיקת "עצור!".</span></div>' : '';
+  return '<section class="panel">' +
+    '<div class="stop-head"><svg class="stop-sign" viewBox="0 0 100 100" aria-hidden="true"><polygon points="30,2 70,2 98,30 98,70 70,98 30,98 2,70 2,30" fill="var(--stop)"/><text x="50" y="60" text-anchor="middle" font-size="26" font-weight="700" fill="#ffffff" font-family="Arial">עצור</text></svg>' +
+      '<h2>שלב 4: בדיקת "עצור!"</h2></div>' +
+    '<p class="lead">האם יש בתוכנית בדיקה או המלצה שמסכנת את הנסיעה או את העובד?</p>' +
+    '<div class="radio-row" role="radiogroup" aria-label="תשובת עצור">' +
+      ['אין סכנה', 'יש סכנה'].map(a => '<label><input type="radio" name="stop" value="' + a + '"' + (S.stop.answer === a ? ' checked' : '') + '> ' + a + '</label>').join('') + '</div>' +
+    '<div class="check">' + STOP_CHECKS.map((c, i) => '<label><input type="checkbox" data-check="' + i + '"' + (S.stop.checks[i] ? ' checked' : '') + '> ' + esc(c) + '</label>').join('') + '</div>' +
+    '<label class="field" for="stop-note">הערה (לא חובה)<input type="text" id="stop-note" data-bind="stop.note" value="' + esc(S.stop.note) + '"></label>' +
+    '<div id="stop-box">' + box + '</div>' +
+    '<div class="actions"><button type="button" class="primary" id="to5"' + (r === 'ok' ? '' : ' disabled') + '>המשך לסיכום</button>' +
+      '<span class="hint">' + (r === 'incomplete' ? 'ענו על השאלה וסמנו את שלוש הבדיקות.' : '') + '</span></div>' +
+  '</section>';
+}
+
+function viewSummary() {
+  return '<section class="panel">' +
+    '<h2>שלב 5: סיכום להגשה</h2>' +
+    '<p class="lead">העתיקו את הסיכום והוסיפו אותו ליומן המסע הדיאגנוסטי, יחד עם צילומי המסך של השיחה עם העוזר.</p>' +
+    '<pre class="summary" id="summary" tabindex="0">' + esc(buildSummary(S)) + '</pre>' +
+    '<div class="actions"><button type="button" class="primary" id="copy">העתקת הסיכום</button><span class="hint" id="copy-msg" role="status"></span>' +
+      '<button type="button" class="secondary" id="reset">התחלה מחדש</button></div>' +
+    '<div id="reset-confirm"></div>' +
+  '</section>';
+}
+
+function render() {
+  renderRail();
+  const v = [null, viewCase, viewAssistant, viewTable, viewStop, viewSummary][S.step];
+  $('#stage').innerHTML = v();
+  if (S.step === 1) renderSpec(0);
+}
+
+/* ---------- events ---------- */
+function setPath(path, value) {
+  const parts = path.split('.');
+  let o = S; for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]];
+  o[parts[parts.length - 1]] = value;
+}
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.bind) { setPath(t.dataset.bind, t.value); save(); }
+  if (t.dataset.f) { const i = +t.closest('tr').dataset.row; S.rows[i][t.dataset.f] = t.value; S.rows[i].example = false; save(); }
+  if (t.id === 'hyp') {
+    const ok = canEnterAssistant(S);
+    $('#to2').disabled = !ok; $('#gate-hint').textContent = ok ? '' : 'המעבר לעוזר ייפתח אחרי שתכתבו השערה.';
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.name === 'stop') { S.stop.answer = t.value; save(); render(); }
+  if (t.dataset.check) { S.stop.checks[+t.dataset.check] = t.checked; save(); render(); }
+  if (t.dataset.f === 'mark' || t.dataset.bind === 'trace.rowId') save();
+});
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.go) go(+t.dataset.go);
+  else if (t.dataset.tab) renderSpec(+t.dataset.tab);
+  else if (t.id === 'to2' && canEnterAssistant(S)) unlock(2);
+  else if (t.id === 'send') { S.mapShown = true; save(); render(); }
+  else if (t.dataset.ask) { const q = QA[+t.dataset.ask].q; if (!S.asked.includes(q)) S.asked.push(q); save(); render(); }
+  else if (t.id === 'to3') unlock(3);
+  else if (t.id === 'to4') {
+    const errs = validateTable(S);
+    if (errs.length) {
+      $('#table-errors').innerHTML = '<div class="notice warn" role="alert"><b>עוד לא אפשר להמשיך. חסר:</b><ul class="err-list">' + errs.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>';
+    } else unlock(4);
+  }
+  else if (t.id === 'to5' && stopResult(S) === 'ok') unlock(5);
+  else if (t.id === 'copy') {
+    const text = buildSummary(S), msg = $('#copy-msg');
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#summary')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); msg.textContent = 'הסיכום מסומן. העתיקו אותו עם Ctrl+C.'; };
+    try { navigator.clipboard.writeText(text).then(() => { msg.textContent = 'הסיכום הועתק.'; }, fallback); } catch (err) { fallback(); }
+  }
+  else if (t.id === 'reset') {
+    $('#reset-confirm').innerHTML = '<div class="notice warn"><b>למחוק את כל העבודה ולהתחיל מחדש?</b><div class="actions"><button type="button" class="primary" id="reset-yes">כן, להתחיל מחדש</button><button type="button" class="secondary" id="reset-no">ביטול</button></div></div>';
+  }
+  else if (t.id === 'reset-yes') { S = withExampleRow(freshState()); save(); render(); }
+  else if (t.id === 'reset-no') { $('#reset-confirm').innerHTML = ''; }
+});
+
+/* ---------- self-tests: open with #tests ---------- */
+function runTests() {
+  const out = [];
+  const check = (name, cond) => out.push({ name, pass: !!cond });
+  const filled = () => {
+    const s = freshState();
+    s.hypothesis = 'נקישות בפנייה חדה, חושדים במפרק CV חיצוני';
+    s.rows[0] = Object.assign(s.rows[0], { mark: 'מתקבלת', test: 'סיבוב ציר ביד', tool: 'ידיים', normal: 'אין חופש', page: '41', order: '2' });
+    s.rows[1] = Object.assign(s.rows[1], { mark: 'צריך לבדוק', test: 'בדיקה ויזואלית', tool: 'פנס', normal: 'גומייה שלמה', page: '41', order: '1' });
+    s.rows[2] = Object.assign(s.rows[2], { mark: 'נדחית', reason: 'הערך סותר את עמ׳ 63' });
+    s.trace = { rowId: 'h3', text: 'העוזר נתן 0.02–0.05 מ"מ, במפרט כתוב 0.08–0.15' };
+    s.stop = { answer: 'אין סכנה', checks: [true, true, true], note: '' };
+    return s;
+  };
+  // R1
+  check('ד1: אין מעבר לעוזר בלי השערה', !canEnterAssistant(freshState()));
+  check('ד1: אין מעבר לעוזר עם השערה קצרה מדי', !canEnterAssistant(Object.assign(freshState(), { hypothesis: 'מפרק CV' })));
+  check('ד1: יש מעבר לעוזר עם השערה מלאה', canEnterAssistant(filled()));
+  check('ד1: כרטיס התקלה כולל תסמין, תנאים, קודים ונתוני זמן אמת', CASE.symptom && CASE.conditions.length && CASE.dtc && CASE.live.length);
+  check('ד1: יש שלושה דפי מפרט עם מספר עמוד', SPEC.length === 3 && SPEC.every(p => p.page > 0 && p.rows.length));
+  // R2 (simulated)
+  check('ד2: לכל השערה יש נימוק ועמוד', AI_MAP.every(h => h.reason && h.page));
+  check('ד2: יש בדיוק טעות מתוכננת אחת', AI_MAP.filter(h => h.flawed).length === 1);
+  check('ד2: שאלה מהמפרט מחזירה ערך ועמוד', answerFor('מה מרווח השיניים התקין בדיפרנציאל?').includes('63'));
+  check('ד2: שאלה שאין עליה מידע מחזירה "אין מידע במפרט"', answerFor('מה לחץ האוויר המומלץ בצמיגים?') === 'אין מידע במפרט.' && answerFor('שאלה אחרת') === 'אין מידע במפרט.');
+  // R3
+  check('ד3: טבלה ריקה נחסמת', validateTable(freshState()).length > 0);
+  check('ד3: טבלה מלאה עוברת', validateTable(filled()).length === 0);
+  const noReason = filled(); noReason.rows[2].reason = '';
+  check('ד3: דחייה בלי נימוק נחסמת', validateTable(noReason).some(e => e.includes('נימוק')));
+  const noTool = filled(); noTool.rows[0].tool = '';
+  check('ד3: שדה כלי חסר נחסם עם הודעה', validateTable(noTool).some(e => e.includes('כלי')));
+  const dupOrder = filled(); dupOrder.rows[0].order = '1';
+  check('ד3: אותו מספר סדר פעמיים נחסם', validateTable(dupOrder).some(e => e.includes('פעמיים')));
+  const noTrace = filled(); noTrace.trace = { rowId: '', text: '' };
+  check('ד3: בלי "עקבות הבינה" נחסם', validateTable(noTrace).some(e => e.includes('עקבות')));
+  check('ד3: "עצור!" בלי תשובה = לא הושלם', stopResult(freshState()) === 'incomplete');
+  check('ד3: "יש סכנה" עוצר', stopResult(Object.assign(filled(), { stop: { answer: 'יש סכנה', checks: [true, true, true], note: '' } })) === 'danger');
+  check('ד3: "אין סכנה" בלי כל הבדיקות = לא הושלם', stopResult(Object.assign(filled(), { stop: { answer: 'אין סכנה', checks: [true, false, true], note: '' } })) === 'incomplete');
+  check('ד3: "אין סכנה" עם כל הבדיקות = אפשר להמשיך', stopResult(filled()) === 'ok');
+  const sum = buildSummary(filled());
+  check('ד3: הסיכום כולל השערה ראשונה, השערות, טבלה, עקבות הבינה ו"עצור!"',
+    sum.includes('חושדים במפרק') && AI_MAP.every(h => sum.includes(h.title)) && sum.includes('בדיקה ויזואלית') && sum.includes('0.08–0.15') && sum.includes('תשובה: אין סכנה'));
+  check('ד3: בסיכום הבדיקות מופיעות לפי הסדר', sum.indexOf('1. גומיית מגן') < sum.indexOf('2. מפרק CV'));
+  const passed = out.filter(x => x.pass).length;
+  const panel = $('#tests-panel');
+  panel.hidden = false;
+  panel.innerHTML = '<h2>בדיקות אוטומטיות: ' + passed + ' מתוך ' + out.length + ' עברו</h2><ul class="plain">' +
+    out.map(x => '<li class="' + (x.pass ? 't-pass' : 't-fail') + '">' + (x.pass ? 'עבר' : 'נכשל') + ' · ' + esc(x.name) + '</li>').join('') + '</ul>';
+  panel.dataset.result = passed + '/' + out.length;
+  return out;
+}
+
+render();
+if (location.hash === '#tests') runTests();
+window.addEventListener('hashchange', () => { if (location.hash === '#tests') runTests(); });
+</script>
